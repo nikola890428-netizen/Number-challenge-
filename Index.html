@@ -1,16 +1,216 @@
-Number-challenge-
-Repository navigation
-Code
-Issues
-Pull requests
-Number-challenge-
-/Index.html
 
-nikola890428-netizen
-7 minutes ago
-0 lines (0 loc) · 1 Byte
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10152f">
+<title>Number Challenge</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(160deg,#10152f,#202b55);color:white;min-height:100vh}
+header{text-align:center;padding:25px 12px 12px}
+.logo{font-size:36px;font-weight:900;color:#70f0ff}
+.logo span{color:#ffcc58}
+header p{color:#c6cbe5;margin:8px}
+.container{max-width:480px;margin:auto;padding:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+.stat,.panel{background:#20294a;border:1px solid #38466e;border-radius:16px;padding:15px;text-align:center}
+.stat small{display:block;color:#aeb9df;margin-bottom:8px}
+.stat strong{font-size:23px}
+.panel{padding:22px 16px}
+#status{color:#70f0ff;font-weight:bold}
+#question{font-size:68px;font-weight:900;margin:22px 0;color:#ffcf64}
+#hint{color:#c6cbe5;min-height:22px}
+input{width:100%;padding:16px;border-radius:12px;border:2px solid #53638d;background:#121a36;color:white;font-size:24px;text-align:center;margin:12px 0}
+button{width:100%;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:bold;cursor:pointer;margin-top:10px}
+.primary{background:#70f0ff;color:#10152f}
+.secondary{background:#303d65;color:white}
+button:disabled{opacity:.45}
+#message{min-height:26px;font-weight:bold;margin:12px 0}
+.progress{height:9px;background:#10152f;border-radius:9px;overflow:hidden;margin:16px 0}
+#bar{height:100%;width:0;background:#70f0ff;transition:width .3s}
+footer{text-align:center;color:#aeb9df;font-size:12px;padding:24px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">NUMBER <span>CHALLENGE</span></div>
+  <p>Мисли бързо. Събирай точки. Побеждавай!</p>
+</header>
 
-Code
+<main class="container">
+  <div class="stats">
+    <div class="stat"><small>ТОЧКИ</small><strong id="score">0</strong></div>
+    <div class="stat"><small>НИВО</small><strong id="level">1</strong></div>
+    <div class="stat"><small>ВРЕМЕ</small><strong id="time">30</strong></div>
+  </div>
 
-Blame
+  <section class="panel">
+    <div id="status">ГОТОВ ЛИ СИ?</div>
+    <div id="question">?</div>
+    <div id="hint">Реши задачата преди да изтече времето!</div>
 
+    <div class="progress"><div id="bar"></div></div>
+
+    <form id="answerForm">
+      <input id="answer" type="number" inputmode="numeric"
+        placeholder="Твоят отговор" autocomplete="off" required>
+      <button class="primary" id="submit" type="submit">ОТГОВОРИ ⚡</button>
+    </form>
+
+    <div id="message">Натисни „Започни играта“!</div>
+    <button class="primary" id="start">▶ ЗАПОЧНИ ИГРАТА</button>
+    <button class="secondary" id="restart">↻ НОВА ИГРА</button>
+  </section>
+
+  <section class="panel" style="margin-top:14px">
+    <h3>🏆 Твоят рекорд</h3>
+    <p>Най-добър резултат: <strong id="best">0</strong> точки</p>
+    <p style="color:#c6cbe5;font-size:14px">
+      Правилен отговор: +10 точки. Всяко ново ниво е по-трудно!
+    </p>
+  </section>
+</main>
+
+<footer>NUMBER CHALLENGE · Тренирай ума си всеки ден</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let score = 0;
+let level = 1;
+let time = 30;
+let playing = false;
+let answer = 0;
+let timer = null;
+let rounds = 0;
+let best = 0;
+
+try {
+  best = Number(localStorage.getItem("numberChallengeBest")) || 0;
+} catch(e) {}
+
+$("best").textContent = best;
+
+function makeQuestion() {
+  let a, b, op;
+  const difficulty = Math.min(level, 10);
+  const operations = difficulty < 2 ? ["+"] :
+                     difficulty < 4 ? ["+", "-"] :
+                     ["+", "-", "×"];
+
+  op = operations[Math.floor(Math.random() * operations.length)];
+
+  if (op === "+") {
+    a = Math.floor(Math.random() * (10 * difficulty)) + 1;
+    b = Math.floor(Math.random() * (10 * difficulty)) + 1;
+    answer = a + b;
+  } else if (op === "-") {
+    a = Math.floor(Math.random() * (10 * difficulty)) + 1;
+    b = Math.floor(Math.random() * a) + 1;
+    answer = a - b;
+  } else {
+    a = Math.floor(Math.random() * (difficulty + 4)) + 2;
+    b = Math.floor(Math.random() * 10) + 2;
+    answer = a * b;
+  }
+
+  $("question").textContent = `${a} ${op} ${b} = ?`;
+  $("status").textContent = "НИВО " + level;
+  $("answer").value = "";
+  $("answer").focus();
+}
+
+function update() {
+  $("score").textContent = score;
+  $("level").textContent = level;
+  $("time").textContent = time;
+  $("bar").style.width = ((30 - time) / 30 * 100) + "%";
+}
+
+function stopGame() {
+  playing = false;
+  clearInterval(timer);
+  $("submit").disabled = true;
+  $("start").textContent = "▶ ИГРАЙ ОТНОВО";
+  $("status").textContent = "КРАЙ НА ИГРАТА";
+  $("question").textContent = "🏆";
+  $("hint").textContent = "Ти събра " + score + " точки!";
+  $("message").textContent = "Браво! Опитай отново за по-висок резултат.";
+
+  if (score > best) {
+    best = score;
+    try {
+      localStorage.setItem("numberChallengeBest", String(best));
+    } catch(e) {}
+    $("best").textContent = best;
+  }
+}
+
+function startGame() {
+  clearInterval(timer);
+  score = 0;
+  level = 1;
+  time = 30;
+  rounds = 0;
+  playing = true;
+  $("submit").disabled = false;
+  $("start").textContent = "ИГРАТА Е ЗАПОЧНАЛА";
+  $("message").textContent = "Успех! 💪";
+  $("hint").textContent = "Въведи правилния отговор.";
+  update();
+  makeQuestion();
+
+  timer = setInterval(() => {
+    if (!playing) return;
+    time--;
+    update();
+    if (time <= 0) stopGame();
+  }, 1000);
+}
+
+$("answerForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  if (!playing) return;
+
+  const raw = $("answer").value.trim();
+  if (raw === "") return;
+
+  if (Number(raw) === answer) {
+    score += 10;
+    rounds++;
+    const newLevel = Math.floor(rounds / 5) + 1;
+
+    if (newLevel > level) {
+      level = newLevel;
+      $("message").textContent = "🎉 Страхотно! Ниво " + level + "!";
+      time = Math.min(30, time + 3);
+    } else {
+      $("message").textContent = "✅ Правилно! +10 точки";
+    }
+  } else {
+    $("message").textContent = "❌ Грешно! Правилният отговор е " + answer;
+    time = Math.max(0, time - 3);
+  }
+
+  update();
+
+  if (time <= 0) {
+    stopGame();
+    return;
+  }
+
+  makeQuestion();
+});
+
+$("start").addEventListener("click", () => {
+  if (!playing) startGame();
+});
+
+$("restart").addEventListener("click", startGame);
+$("submit").disabled = true;
+update();
+</script>
+</body>
+</html>
